@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msr-watchdog", "msr-watchdog\msr-watchdog.vcxproj", "{3B742853-843C-4600-A32A-1DF45491CEFD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wrmsr", "wrmsr\wrmsr.vcxproj", "{6780B8D8-8DF6-458E-A1A2-EC9357BB28B2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msr-cmd", "msr-cmd\msr-cmd.vcxproj", "{6780B8D8-8DF6-458E-A1A2-EC9357BB28B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

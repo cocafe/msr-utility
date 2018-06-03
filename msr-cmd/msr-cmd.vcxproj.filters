@@ -18,15 +18,15 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\winring0.cpp">
+    <ClCompile Include="..\common\src\winring0.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\getopt.h">
+    <ClInclude Include="..\common\include\getopt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\winring0.h">
+    <ClInclude Include="..\common\include\winring0.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
