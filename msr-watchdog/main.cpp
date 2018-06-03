@@ -104,6 +104,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	if (ret)
 		goto out;
 
+	if (!IsMsr()) {
+		MessageBox(NULL, L"System platform does not support MSR instruction", lpProgramName, MB_ICONINFORMATION | MB_OK);
+		goto deinit;
+	}
+
 	if (!strncmp(lpCmdLine, "-one", sizeof(char) * 4))
 		cfg.oneshot = 1;
 
