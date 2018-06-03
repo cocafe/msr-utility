@@ -1,6 +1,6 @@
 #include <Windows.h>
 
-#include "winring0.h"
+#include <winring0.h>
 
 #define lpLoaderName L"WinRing0 Loader"
 
