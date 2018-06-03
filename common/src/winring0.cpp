@@ -4,7 +4,7 @@
 
 #define lpLoaderName L"WinRing0 Loader"
 
-#pragma comment(lib, "../lib/WinRing0x64.lib")
+#pragma comment(lib, "../common/lib/WinRing0x64.lib")
 
 int WinRing0_init(void)
 {
