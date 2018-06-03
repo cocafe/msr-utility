@@ -56,8 +56,8 @@ uint32_t nproc_get(void)
 void print_help(void)
 {
 	fprintf_s(stdout, "Usage:\n"
-			  "	wrmsr.exe [options] [read]  [reg]\n"
-			  "	wrmsr.exe [options] [write] [reg] [edx(63 - 32)] [eax(31 - 0)]\n");
+			  "	msr-cmd.exe [options] [read]  [reg]\n"
+			  "	msr-cmd.exe [options] [write] [reg] [edx(63 - 32)] [eax(31 - 0)]\n");
 	fprintf_s(stdout, "Options:\n");
 	fprintf_s(stdout, "	-a		apply to all available processors\n");
 	fprintf_s(stdout, "	-p [CPU]	processor (default: CPU0) to apply\n");
