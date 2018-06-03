@@ -73,8 +73,8 @@
     <LibraryPath>E:\Visual Studio\msr-watchdog\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>E:\Visual Studio\msr-watchdog\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Visual Studio\msr-watchdog\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
