@@ -245,13 +245,13 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	printf_s("-a: %u -p: %u op: %s reg: %#010x edx: %#010x eax: %010x\n", 
-		 cfg.proc_all, 
-		 cfg.proc, 
-		 msr_ops[cfg.msr_op].arg, 
-		 cfg.msr_reg, 
-		 cfg.edx, 
-		 cfg.eax);
+	//printf_s("-a: %u -p: %u op: %s reg: %#010x edx: %#010x eax: %010x\n",
+	//	 cfg.proc_all,
+	//	 cfg.proc,
+	//	 msr_ops[cfg.msr_op].arg,
+	//	 cfg.msr_reg,
+	//	 cfg.edx,
+	//	 cfg.eax);
 
 	if (WinRing0_init()) {
 		fprintf_s(stderr, "%s: failed to init WinRing0 driver\n", __func__);
