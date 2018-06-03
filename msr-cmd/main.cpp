@@ -82,12 +82,12 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 			case 'p':
 				if (sscanf_s(optarg, "%u", &cfg->proc) != 1) {
-					fprintf_s(stderr, "%s: failed to parse argument for -p\n", __func__);
+					fprintf_s(stderr, "%s(): failed to parse argument for -p\n", __func__);
 					return -EINVAL;
 				}
 				
 				if (cfg->proc > (cfg->nproc - 1)) {
-					fprintf_s(stderr, "%s: invalid processor id\n", __func__);
+					fprintf_s(stderr, "%s(): invalid processor id\n", __func__);
 					return -EINVAL;
 				}
 
@@ -95,11 +95,11 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 			case '?':
 				if (optopt == 'p')
-					fprintf_s(stderr, "%s: option -p needs an arguemnt\n", __func__);
+					fprintf_s(stderr, "%s(): option -p needs an arguemnt\n", __func__);
 				else if (isprint(optopt))
-					fprintf_s(stderr, "%s: unknonw option -%c\n", __func__, optopt);
+					fprintf_s(stderr, "%s(): unknonw option -%c\n", __func__, optopt);
 				else
-					fprintf_s(stderr, "%s: failed to parse character: \\x%x\n", __func__, optopt);
+					fprintf_s(stderr, "%s(): failed to parse character: \\x%x\n", __func__, optopt);
 
 				return -EINVAL;
 
@@ -123,7 +123,7 @@ int parse_opts(config *cfg, int argc, char *argv[])
 					}
 
 					if (!f) {
-						fprintf_s(stderr, "%s: invalid opeartion argument: %s\n", __func__, argv[index]);
+						fprintf_s(stderr, "%s(): invalid opeartion argument: %s\n", __func__, argv[index]);
 						return -EINVAL;
 					}
 				}
@@ -132,7 +132,7 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 			case WRMSR_REG:
 				if (sscanf_s(argv[index], "%x", &cfg->msr_reg) != 1) {
-					fprintf_s(stderr, "%s: invalid msr register\n", __func__);
+					fprintf_s(stderr, "%s(): invalid msr register\n", __func__);
 					return -EINVAL;
 				}
 				
@@ -140,14 +140,14 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 			case WRMSR_EDX:
 				if (sscanf_s(argv[index], "%x", &cfg->edx) != 1) {
-					fprintf_s(stderr, "%s: invalid edx register\n", __func__);
+					fprintf_s(stderr, "%s(): invalid edx register\n", __func__);
 					return -EINVAL;
 				}
 				break;
 
 			case WRMSR_EAX:
 				if (sscanf_s(argv[index], "%x", &cfg->eax) != 1) {
-					fprintf_s(stderr, "%s: invalid eax register\n", __func__);
+					fprintf_s(stderr, "%s(): invalid eax register\n", __func__);
 					return -EINVAL;
 				}
 				break;
@@ -158,7 +158,7 @@ int parse_opts(config *cfg, int argc, char *argv[])
 	}
 
 	if ((cfg->msr_op == MSR_OPS_READ && i < 2) || (cfg->msr_op == MSR_OPS_WRITE && i < 4)) {
-		fprintf_s(stderr, "%s: missing arguments\n", __func__);
+		fprintf_s(stderr, "%s(): missing arguments\n", __func__);
 		return -EINVAL;
 	}
 
@@ -193,10 +193,10 @@ int msr_read(config *cfg)
 
 		thread_mask = 1ULL << i;
 		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
-			fprintf_s(stderr, "%s: CPU%zu RdmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 		}
 
-		fprintf_s(stdout, "%s: CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n", 
+		fprintf_s(stdout, "%s(): CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n", 
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
 
@@ -221,13 +221,13 @@ int msr_write(config *cfg)
 
 		thread_mask = 1ULL << i;
 		if (!WrmsrTx(cfg->msr_reg, cfg->eax, cfg->edx, thread_mask)) {
-			fprintf_s(stderr, "%s: CPU%zu WrmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu WrmsrTx() failed\n", __func__, i);
 		}
 
 		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
-			fprintf_s(stderr, "%s: CPU%zu RdmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 		}
-		fprintf_s(stdout, "%s: ret: CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
+		fprintf_s(stdout, "%s(): ret: CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
 
@@ -254,12 +254,12 @@ int main(int argc, char *argv[])
 	//	 cfg.eax);
 
 	if (WinRing0_init()) {
-		fprintf_s(stderr, "%s: failed to init WinRing0 driver\n", __func__);
+		fprintf_s(stderr, "%s(): failed to init WinRing0 driver\n", __func__);
 		return -EFAULT;
 	}
 
 	if (!IsMsr()) {
-		fprintf_s(stderr, "%s: system platform does not support MSR instruction\n", __func__);
+		fprintf_s(stderr, "%s(): system platform does not support MSR instruction\n", __func__);
 		goto deinit;
 	}
 
