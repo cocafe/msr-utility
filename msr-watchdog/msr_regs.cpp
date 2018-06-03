@@ -95,16 +95,18 @@ int msr_regs_expand(msr_regs *list, int gen_regs, int mb_regs)
 	return 0;
 }
 
-int msr_gen_reg_insert(msr_regs *regs, 
-		    DWORD reg, 
-		    DWORD eax,
-		    DWORD edx, 
-		    int watch)
+int msr_gen_reg_insert(msr_regs *regs,
+		       uint32_t proc,
+		       DWORD reg, 
+		       DWORD eax,
+		       DWORD edx,
+		       int watch)
 {
 	if (msr_regs_is_full(regs))
 		if (msr_regs_expand(regs, REG_GENERAL, 0))
 			return -ENOMEM;
 
+	regs->gen_regs[regs->gen_regs_count].proc = proc;
 	regs->gen_regs[regs->gen_regs_count].reg = reg;
 	regs->gen_regs[regs->gen_regs_count].eax = eax;
 	regs->gen_regs[regs->gen_regs_count].edx = edx;
@@ -174,8 +176,9 @@ int msr_regs_dump(msr_regs *regs)
 
 	for (size_t i = 0; i < regs->gen_regs_count; i++)
 	{
-		printf_s("%zd reg: %#010x edx: %#010x eax: %#010x\n", 
+		printf_s("%zd CPU%2u reg: %#010x edx: %#010x eax: %#010x\n", 
 		       i, 
+		       regs->gen_regs[i].proc,
 		       regs->gen_regs[i].reg, 
 		       regs->gen_regs[i].edx, 
 		       regs->gen_regs[i].eax);

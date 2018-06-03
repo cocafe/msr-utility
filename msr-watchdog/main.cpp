@@ -17,23 +17,27 @@ int msr_gen_reg_deamon(msr_regs *regs)
 	{
 		DWORD eax;
 		DWORD edx;
+		DWORD_PTR thread_mask = 0;
 
 		if (!regs->gen_regs[i].watch)
 			continue;
 
-		if (!Rdmsr(regs->gen_regs[i].reg, &eax, &edx)) {
-			printf_s("%s(): Wrmsr() failure\n", __func__);
+		thread_mask = 1ULL << regs->gen_regs[i].proc;
+
+		if (!RdmsrTx(regs->gen_regs[i].reg, &eax, &edx, thread_mask)) {
+			printf_s("%s(): RdmsrTx() failure\n", __func__);
 			return -EIO;
 		}
 
-		printf_s("%s: Rdmsr(): reg: %#010x edx: %#010x eax: %#010x\n",
-		       __func__, regs->gen_regs[i].reg, edx, eax);
+		printf_s("%s: RdmsrTx(): CPU%2u reg: %#010x edx: %#010x eax: %#010x\n",
+		       __func__, regs->gen_regs[i].proc, regs->gen_regs[i].reg, edx, eax);
 
 		if (eax != regs->gen_regs[i].eax || edx != regs->gen_regs[i].edx) {
-			printf_s("%s(): Register value differs, call Wrmsr()\n", __func__);
-			if (!Wrmsr(regs->gen_regs[i].reg,
-				   regs->gen_regs[i].eax,
-				   regs->gen_regs[i].edx)) {
+			printf_s("%s(): Register value differs, invoke WrmsrTx()\n", __func__);
+			if (!WrmsrTx(regs->gen_regs[i].reg,
+				     regs->gen_regs[i].eax,
+				     regs->gen_regs[i].edx,
+				     thread_mask)) {
 				int ret_msgbox = MessageBox(NULL, L"WinRing0 driver failed to write register, continue?", 
 							    lpProgramName, MB_ICONWARNING | MB_YESNO);
 				if (ret_msgbox == IDNO)
@@ -127,6 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	while (1) {
 		if (msr_gen_reg_deamon(&cfg.regs))
 			break;
+
 		if (msr_mailbox_deamon(&cfg.regs))
 			break;
 

@@ -23,13 +23,13 @@ enum {
 };
 
 ini_item ini_items[] = {
-	{ "WatchdogIntervalMS",	"WatchdogIntervalMS=%d",	1 },
-	{ "MSRGeneralRegLock",	"MSRGeneralRegLock=%x, %x, %x", 3 },
-	{ "MailboxRegLock",	"MailboxRegLock=%x",		1 },
-	{ "MailboxRegGet",	"MailboxRegGet=%x, %x, %x",	3 },
-	{ "MailboxRegSet",	"MailboxRegSet=%x, %x, %x",	3 },
-	{ "MailboxRegRet",	"MailboxRegRet=%x, %x, %x",	3 },
-	{ "OneShot",		"OneShot=%d",			1 },
+	{ "WatchdogIntervalMS",	"WatchdogIntervalMS=%d",		1 },
+	{ "MSRGeneralRegLock",	"MSRGeneralRegLock=%u, %x, %x, %x",	4 },
+	{ "MailboxRegLock",	"MailboxRegLock=%x",			1 },
+	{ "MailboxRegGet",	"MailboxRegGet=%x, %x, %x",		3 },
+	{ "MailboxRegSet",	"MailboxRegSet=%x, %x, %x",		3 },
+	{ "MailboxRegRet",	"MailboxRegRet=%x, %x, %x",		3 },
+	{ "OneShot",		"OneShot=%d",				1 },
 };
 
 void readline(FILE *fp, char *buf, size_t len)
@@ -69,12 +69,13 @@ int parse_ini(char *buf, size_t len, config *cfg)
 		DWORD reg;
 		DWORD eax;
 		DWORD edx;
+		uint32_t proc;
 
-		if (sscanf_s(buf, ini_items[MSRGeneralRegLock].fmt, &reg, &edx, &eax)
+		if (sscanf_s(buf, ini_items[MSRGeneralRegLock].fmt, &proc, &reg, &edx, &eax)
 		    != ini_items[MSRGeneralRegLock].opts)
 			return 1;
 
-		if (msr_gen_reg_insert(&cfg->regs, reg, eax, edx, 1))
+		if (msr_gen_reg_insert(&cfg->regs, proc, reg, eax, edx, 1))
 			return 1;
 
 		return 0;

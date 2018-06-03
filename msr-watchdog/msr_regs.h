@@ -1,6 +1,9 @@
 #pragma once
 
+#include <stdint.h>
 #include <Windows.h>
+
+#define CPU0				(0)
 
 enum {
 	NOT_REG = 0,
@@ -8,12 +11,12 @@ enum {
 	REG_MAILBOX,
 };
 
-// TOOD: process and thread mask
 typedef struct msr_reg {
-	DWORD	reg;
-	DWORD	eax;	// low 32bit
-	DWORD	edx;	// high 32bit
-	int	watch;
+	uint32_t	proc;
+	DWORD		reg;
+	DWORD		eax;	// low 32bit
+	DWORD		edx;	// high 32bit
+	int		watch;
 } msr_reg;
 
 typedef struct msr_mailbox {
@@ -45,6 +48,7 @@ int msr_regs_init(msr_regs *list);
 int msr_regs_deinit(msr_regs *list);
 
 int msr_gen_reg_insert(msr_regs *regs,
+		       uint32_t proc,
 		       DWORD reg,
 		       DWORD eax,
 		       DWORD edx,
