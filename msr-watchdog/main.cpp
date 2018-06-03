@@ -11,6 +11,8 @@
 
 LPCTSTR lpProgramName = L"msr watchdog";
 
+#define MSR_WATCHDOG_INTERVAL_MS		(3000)
+
 int msr_gen_reg_deamon(msr_regs *regs)
 {
 	for (size_t i = 0; i < regs->gen_regs_count; i++)
@@ -92,6 +94,9 @@ int msr_mailbox_deamon(msr_regs *regs)
 void config_init(config *cfg)
 {
 	memset(cfg, 0x00, sizeof(config));
+
+	cfg->oneshot = 0;
+	cfg->watchdog_interval = MSR_WATCHDOG_INTERVAL_MS;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, 
@@ -99,8 +104,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		   LPSTR lpCmdLine, 
 		   int nCmdShow)
 {
-	int ret = 0;
 	config cfg;
+	int ret = 0;
 
 	config_init(&cfg);
 
