@@ -2,7 +2,7 @@
 
 #include <winring0.h>
 
-#define lpLoaderName L"WinRing0 Loader"
+#define lpWinRing0LoaderTitle L"WinRing0 Loader"
 
 #pragma comment(lib, "../common/lib/WinRing0x64.lib")
 
@@ -11,7 +11,7 @@ int WinRing0_init(void)
 	if (!InitializeOls()) {
 		MessageBox(NULL,
 			   L"Failed to load DLL",
-			   lpLoaderName,
+			   lpWinRing0LoaderTitle,
 			   MB_ICONERROR | MB_OK);
 		return -EFAULT;
 	}
@@ -24,35 +24,35 @@ int WinRing0_init(void)
 		case OLS_DLL_UNSUPPORTED_PLATFORM:
 			MessageBox(NULL,
 				   L"DLL Status Error!! UNSUPPORTED_PLATFORM",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 
 		case OLS_DLL_DRIVER_NOT_LOADED:
 			MessageBox(NULL,
 				   L"DLL Status Error!! DRIVER_NOT_LOADED",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 
 		case OLS_DLL_DRIVER_NOT_FOUND:
 			MessageBox(NULL,
 				   L"DLL Status Error!! DRIVER_NOT_FOUND",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 
 		case OLS_DLL_DRIVER_UNLOADED:
 			MessageBox(NULL,
 				   L"DLL Status Error!! DRIVER_UNLOADED",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 
 		case OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK:
 			MessageBox(NULL,
 				   L"DLL Status Error!! DRIVER_NOT_LOADED_ON_NETWORK",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 
@@ -60,7 +60,7 @@ int WinRing0_init(void)
 		default:
 			MessageBox(NULL,
 				   L"DLL Status Error!! UNKNOWN_ERROR",
-				   lpLoaderName,
+				   lpWinRing0LoaderTitle,
 				   MB_ICONERROR | MB_OK);
 			goto dll_deinit;
 	}
