@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 #include "msr_regs.h"
-#include "msr_watchdog.h"
+#include "ini_config.h"
 
 #define MSR_REGS_LIST_SIZE_INIT		(10)
 

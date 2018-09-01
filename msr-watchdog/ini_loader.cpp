@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 #include "msr_regs.h"
-#include "msr_watchdog.h"
+#include "ini_config.h"
 
 typedef struct ini_item {
 	const char	*name;
