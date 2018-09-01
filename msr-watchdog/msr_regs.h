@@ -36,11 +36,11 @@ typedef struct msr_mailbox {
 
 typedef struct msr_reg_list {
 	msr_reg	*gen_regs;
-	size_t	gen_regs_size;
+	size_t	gen_regs_allocated;
 	size_t	gen_regs_count;
 
 	msr_mb	*mb_regs;
-	size_t	mb_regs_size;
+	size_t	mb_regs_allocated;
 	size_t	mb_regs_count;
 } msr_regs;
 

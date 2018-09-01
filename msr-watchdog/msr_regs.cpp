@@ -6,23 +6,23 @@
 #include "msr_regs.h"
 #include "ini_config.h"
 
-#define MSR_REGS_LIST_SIZE_INIT		(10)
+#define MSR_REGS_LIST_COUNT_INIT		(10)
 
 int msr_regs_init(msr_regs *list)
 {
 	if (!list)
 		return -EINVAL;
 
-	list->gen_regs = (msr_reg *)calloc(MSR_REGS_LIST_SIZE_INIT, sizeof(msr_reg));
+	list->gen_regs = (msr_reg *)calloc(MSR_REGS_LIST_COUNT_INIT, sizeof(msr_reg));
 	if (!list->gen_regs)
 		return -ENOMEM;
-	list->gen_regs_size = MSR_REGS_LIST_SIZE_INIT;
+	list->gen_regs_allocated = MSR_REGS_LIST_COUNT_INIT;
 	list->gen_regs_count = 0;
 
-	list->mb_regs = (msr_mb *)calloc(MSR_REGS_LIST_SIZE_INIT, sizeof(msr_mb));
+	list->mb_regs = (msr_mb *)calloc(MSR_REGS_LIST_COUNT_INIT, sizeof(msr_mb));
 	if (!list->mb_regs)
 		return -ENOMEM;
-	list->mb_regs_size = MSR_REGS_LIST_SIZE_INIT;
+	list->mb_regs_allocated = MSR_REGS_LIST_COUNT_INIT;
 	list->mb_regs_count = 0;
 
 	return 0;
@@ -46,8 +46,8 @@ int msr_regs_deinit(msr_regs *list)
 
 int msr_regs_is_full(msr_regs *list)
 {
-	if (list->gen_regs_count >= list->gen_regs_size
-	    || list->mb_regs_count >= list->mb_regs_size)
+	if (list->gen_regs_count >= list->gen_regs_allocated
+	    || list->mb_regs_count >= list->mb_regs_allocated)
 		return 1;
 	else
 		return 0;
@@ -62,34 +62,34 @@ int msr_regs_expand(msr_regs *list, int gen_regs, int mb_regs)
 		msr_reg *t;
 		size_t t_size;
 
-		t_size = list->gen_regs_size + MSR_REGS_LIST_SIZE_INIT;
+		t_size = list->gen_regs_allocated + MSR_REGS_LIST_COUNT_INIT;
 		t = (msr_reg *)calloc(t_size, sizeof(msr_reg));
 		if (!t)
 			return -ENOMEM;
 
 		ZeroMemory(t, t_size * sizeof(msr_reg));
-		CopyMemory(t, list->gen_regs, list->gen_regs_size * sizeof(msr_reg));
+		CopyMemory(t, list->gen_regs, list->gen_regs_allocated * sizeof(msr_reg));
 
 		free(list->gen_regs);
 		list->gen_regs = t;
-		list->gen_regs_size = t_size;
+		list->gen_regs_allocated = t_size;
 	}
 
 	if (mb_regs) {
 		msr_mb *t;
 		size_t t_size;
 
-		t_size = list->mb_regs_size + MSR_REGS_LIST_SIZE_INIT;
+		t_size = list->mb_regs_allocated + MSR_REGS_LIST_COUNT_INIT;
 		t = (msr_mb *)calloc(t_size, sizeof(msr_mb));
 		if (!t)
 			return -ENOMEM;
 
 		ZeroMemory(t, t_size * sizeof(msr_mb));
-		CopyMemory(t, list->mb_regs, list->mb_regs_size * sizeof(msr_mb));
+		CopyMemory(t, list->mb_regs, list->mb_regs_allocated * sizeof(msr_mb));
 
 		free(list->mb_regs);
 		list->mb_regs = t;
-		list->mb_regs_size = t_size;
+		list->mb_regs_allocated = t_size;
 	}
 
 	return 0;
