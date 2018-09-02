@@ -73,7 +73,7 @@
     <LibraryPath>E:\Visual Studio\msr-watchdog\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)\common\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\common\include;$(SolutionDir)\msr-cmd;$(SolutionDir)\msr-watchdog;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\common\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -136,15 +136,19 @@
     <ClCompile Include="..\common\src\winring0.cpp" />
     <ClCompile Include="ini_loader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mem_regs.cpp" />
     <ClCompile Include="msr_regs.cpp" />
+    <ClCompile Include="winio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\include\getopt.h" />
     <ClInclude Include="..\common\include\winring0.h" />
     <ClInclude Include="..\common\include\xeon_e5v4_msr.h" />
+    <ClInclude Include="mem_regs.h" />
     <ClInclude Include="msr_regs.h" />
-    <ClInclude Include="msr_watchdog.h" />
+    <ClInclude Include="ini_config.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="winio.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
