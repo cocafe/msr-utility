@@ -4,10 +4,11 @@
 #include <Windows.h>
 #include <windowsx.h>
 
+#include <winio.h>
 #include <winring0.h>
 
 #include "msr_regs.h"
-#include "msr_watchdog.h"
+#include "ini_config.h"
 
 LPCTSTR lpProgramName = L"msr watchdog";
 
@@ -91,12 +92,43 @@ int msr_mailbox_deamon(msr_regs *regs)
 	return 0;
 }
 
+int pmem_deamon(mem_regs *regs)
+{
+	for (size_t i = 0; i < regs->regs_count; i++) {
+		DWORD data_r = 0;
+
+		if (GetPhysLong((PBYTE)regs->regs[i].addr, &data_r) == FALSE) {
+			printf_s("%s(): GetPhysLong() failure\n", __func__);
+			return -EFAULT;
+		}
+
+		if (data_r == regs->regs[i].data)
+			continue;
+
+		if (SetPhysLong((PBYTE)regs->regs[i].addr, regs->regs[i].data) == FALSE) {
+			printf_s("%s(): GetPhysLong() failure\n", __func__);
+			return -EFAULT;
+		}
+	}
+
+	return 0;
+}
+
 void config_init(config *cfg)
 {
 	memset(cfg, 0x00, sizeof(config));
 
 	cfg->oneshot = 0;
 	cfg->watchdog_interval = MSR_WATCHDOG_INTERVAL_MS;
+
+	msr_regs_init(&cfg->regs);
+	mem_regs_init(&cfg->pmem);
+}
+
+void config_deinit(config *cfg)
+{
+	msr_regs_deinit(&cfg->regs);
+	mem_regs_deinit(&cfg->pmem);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, 
@@ -107,7 +139,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	config cfg;
 	int ret = 0;
 
-	config_init(&cfg);
+	ret = WinIO_init();
+	if (ret)
+		goto out;
 
 	ret = WinRing0_init();
 	if (ret)
@@ -121,23 +155,27 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	if (!strncmp(lpCmdLine, "-one", sizeof(char) * 4))
 		cfg.oneshot = 1;
 
-	msr_regs_init(&cfg.regs);
+	config_init(&cfg);
 
-	ret = load_ini("./msr-regs.ini", &cfg);
+	ret = load_ini("./msr-watchdog.ini", &cfg);
 	if (ret) {
-		MessageBox(NULL, L"Failed to load registers config: msr-regs.ini", lpProgramName, MB_ICONSTOP | MB_OK);
+		MessageBox(NULL, L"Failed to parse config .ini", lpProgramName, MB_ICONSTOP | MB_OK);
 		goto deinit;
 	}
 
-	printf_s("%s: load msr-regs.ini successfully\n", __func__);
+	printf_s("%s: load config .ini successfully\n", __func__);
 
 	msr_regs_dump(&cfg.regs);
+	mem_regs_dump(&cfg.pmem);
 
 	while (1) {
 		if (msr_gen_reg_deamon(&cfg.regs))
 			break;
 
 		if (msr_mailbox_deamon(&cfg.regs))
+			break;
+
+		if (pmem_deamon(&cfg.pmem))
 			break;
 
 		if (cfg.oneshot) {
@@ -149,8 +187,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 deinit:
-	msr_regs_deinit(&cfg.regs);
+	config_deinit(&cfg);
 	WinRing0_deinit();
+	WinIO_deinit();
 
 out:
 	return ret;
