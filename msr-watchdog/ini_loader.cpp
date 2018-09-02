@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <conio.h>
 #include <errno.h>
 #include <Windows.h>
 
 #include "msr_regs.h"
+#include "mem_regs.h"
 #include "ini_config.h"
 
 typedef struct ini_item {
@@ -20,6 +22,7 @@ enum {
 	MailboxRegSet,
 	MailboxRegRet,
 	OneShot,
+	PhysicalMemoryLock,
 };
 
 ini_item ini_items[] = {
@@ -30,6 +33,7 @@ ini_item ini_items[] = {
 	{ "MailboxRegSet",	"MailboxRegSet=%x, %x, %x",		3 },
 	{ "MailboxRegRet",	"MailboxRegRet=%x, %x, %x",		3 },
 	{ "OneShot",		"OneShot=%d",				1 },
+	{ "PhysicalMemoryLock", "PhysicalMemoryLock=%I64x, %x",         2 },
 };
 
 void readline(FILE *fp, char *buf, size_t len)
@@ -139,6 +143,20 @@ int parse_ini(char *buf, size_t len, config *cfg)
 		return 0;
 	}
 
+	if (!strncmp(ini_items[PhysicalMemoryLock].name, buf, strlen(ini_items[PhysicalMemoryLock].name))) {
+		uint64_t addr;
+		uint32_t data;
+
+		if (sscanf_s(buf, ini_items[PhysicalMemoryLock].fmt, &addr, &data)
+			!= ini_items[PhysicalMemoryLock].opts)
+			return 1;
+
+		if (mem_regs_insert(&cfg->pmem, addr, data))
+			return 1;
+
+		return 0;
+	}
+
 	return -ENOENT;
 }
 
@@ -172,7 +190,7 @@ int load_ini(const char *filepath, config *cfg)
 		}
 
 		if (parse_ini(buf, sizeof(buf), cfg)) {
-			printf("parsing failure at line %zd: %s\n", line, buf);
+			printf_s("%s: parsing failure at line %zd: %s\n", __func__, line, buf);
 			fclose(fp);
 
 			return -EFAULT;
