@@ -61,6 +61,13 @@ void readline(FILE *fp, char *buf, size_t len)
 
 int parse_ini(char *buf, size_t len, config *cfg)
 {
+	if (!strncmp(ini_items[OneShot].name, buf, strlen(ini_items[OneShot].name))) {
+		if (sscanf(buf, ini_items[OneShot].fmt, &cfg->oneshot) != ini_items[OneShot].opts)
+			return 1;
+
+		return 0;
+	}
+
 	if (!strncmp(ini_items[WatchdogInterval].name, buf, strlen(ini_items[WatchdogInterval].name))) {
 		if (sscanf_s(buf, ini_items[WatchdogInterval].fmt, &cfg->watchdog_interval)
 		    != ini_items[WatchdogInterval].opts)
