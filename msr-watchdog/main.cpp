@@ -185,9 +185,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		goto deinit;
 	}
 
-	if (!strncmp(lpCmdLine, "-one", sizeof(char) * 4))
-		cfg.oneshot = 1;
-
 	config_init(&cfg);
 
 	ret = load_ini("./msr-watchdog.ini", &cfg);
