@@ -190,7 +190,7 @@ int load_ini(const char *filepath, config *cfg)
 		}
 
 		if (parse_ini(buf, sizeof(buf), cfg)) {
-			printf_s("%s: parsing failure at line %zd: %s\n", __func__, line, buf);
+			printf_s("%s(): parsing failure at line %zd: %s\n", __func__, line, buf);
 			fclose(fp);
 
 			return -EFAULT;

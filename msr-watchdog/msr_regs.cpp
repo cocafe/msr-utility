@@ -171,7 +171,6 @@ int msr_regs_dump(msr_regs *regs)
 	if (!regs)
 		return -EINVAL;
 
-	printf_s("%s:\n", __func__);
 	printf_s("\nMSR General register:\n");
 
 	for (size_t i = 0; i < regs->gen_regs_count; i++)

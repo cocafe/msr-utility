@@ -91,7 +91,6 @@ int mem_regs_dump(mem_regs *list)
 	if (!list)
 		return -EINVAL;
 
-	printf_s("%s:\n", __func__);
 	printf_s("\nPhysical Memory Watches:\n");
 
 	for (size_t i = 0; i < list->regs_count; i++) {

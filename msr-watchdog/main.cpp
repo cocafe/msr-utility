@@ -32,7 +32,7 @@ int msr_gen_reg_deamon(msr_regs *regs)
 			return -EIO;
 		}
 
-		printf_s("%s: RdmsrTx(): CPU%2u reg: %#010x edx: %#010x eax: %#010x\n",
+		printf_s("%s(): RdmsrTx(): CPU%2u reg: %#010x edx: %#010x eax: %#010x\n",
 		       __func__, regs->gen_regs[i].proc, regs->gen_regs[i].reg, edx, eax);
 
 		if (eax != regs->gen_regs[i].eax || edx != regs->gen_regs[i].edx) {
@@ -73,7 +73,7 @@ int msr_mailbox_deamon(msr_regs *regs)
 			return -EIO;
 		}
 
-		printf_s("%s: Rdmsr(): reg: %#010x edx: %#010x eax: %#010x\n",
+		printf_s("%s(): Rdmsr(): reg: %#010x edx: %#010x eax: %#010x\n",
 		       __func__, regs->mb_regs[i].reg, edx, eax);
 
 		if (regs->mb_regs[i].eax_ret != eax || regs->mb_regs[i].edx_ret != edx) {
@@ -148,7 +148,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		goto out;
 
 	if (!IsMsr()) {
-		MessageBox(NULL, L"System platform does not support MSR instruction", lpProgramName, MB_ICONINFORMATION | MB_OK);
+		MessageBox(NULL, L"System platform does not support MSR instruction",
+			lpProgramName, MB_ICONINFORMATION | MB_OK);
 		goto deinit;
 	}
 
@@ -163,7 +164,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		goto deinit;
 	}
 
-	printf_s("%s: load config .ini successfully\n", __func__);
+	printf("%s(): load config .ini successfully\n", __func__);
 
 	msr_regs_dump(&cfg.regs);
 	mem_regs_dump(&cfg.pmem);
