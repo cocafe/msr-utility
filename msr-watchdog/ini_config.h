@@ -12,6 +12,7 @@ typedef struct configuration {
 	mem_regs	pmem;
 	int		watchdog_interval;
 	int		oneshot;
+	int		debug;
 } config;
 
 int load_ini(const char *filepath, config *cfg);

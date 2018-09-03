@@ -171,6 +171,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	config cfg;
 	int ret = 0;
 
+	if (!strcmp(lpCmdLine, "-debug")) {
+		cfg.debug = 1;
+	} else {
+		cfg.debug = 0;
+	}
+
+	if (cfg.debug) {
+		console_init();
+		console_stdio_redirect();
+	}
+
 	ret = WinIO_init();
 	if (ret)
 		goto out;
@@ -217,6 +228,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 deinit:
+	if (cfg.debug)
+		console_deinit();
+
 	config_deinit(&cfg);
 	WinRing0_deinit();
 	WinIO_deinit();
