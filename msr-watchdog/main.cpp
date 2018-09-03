@@ -1,3 +1,6 @@
+#include <io.h>
+#include <conio.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -129,6 +132,35 @@ void config_deinit(config *cfg)
 {
 	msr_regs_deinit(&cfg->regs);
 	mem_regs_deinit(&cfg->pmem);
+}
+
+void console_init(void)
+{
+	AllocConsole();
+}
+
+void console_deinit(void)
+{
+	FreeConsole();
+}
+
+void console_stdio_redirect(void)
+{
+	HANDLE ConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+	int SystemOutput = _open_osfhandle(intptr_t(ConsoleOutput), _O_TEXT);
+	FILE *COutputHandle = _fdopen(SystemOutput, "w");
+
+	HANDLE ConsoleError = GetStdHandle(STD_ERROR_HANDLE);
+	int SystemError = _open_osfhandle(intptr_t(ConsoleError), _O_TEXT);
+	FILE *CErrorHandle = _fdopen(SystemError, "w");
+
+	HANDLE ConsoleInput = GetStdHandle(STD_INPUT_HANDLE);
+	int SystemInput = _open_osfhandle(intptr_t(ConsoleInput), _O_TEXT);
+	FILE *CInputHandle = _fdopen(SystemInput, "r");
+
+	freopen_s(&CInputHandle, "CONIN$", "r", stdin);
+	freopen_s(&COutputHandle, "CONOUT$", "w", stdout);
+	freopen_s(&CErrorHandle, "CONOUT$", "w", stderr);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, 
