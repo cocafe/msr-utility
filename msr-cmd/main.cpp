@@ -11,6 +11,8 @@
 
 #define ARRAY_SIZE(arr)				(sizeof(arr) / sizeof(arr[0]))
 
+static int no_readback;
+
 typedef struct msr_op {
 	uint32_t idx;
 	const char *arg;
@@ -60,6 +62,7 @@ void print_help(void)
 			  "	msr-cmd.exe [options] [write] [reg] [edx(63 - 32)] [eax(31 - 0)]\n");
 	fprintf_s(stdout, "Options:\n");
 	fprintf_s(stdout, "	-a		apply to all available processors\n");
+	fprintf_s(stdout, "	-s		write only do not read back\n");
 	fprintf_s(stdout, "	-p [CPU]	processor (default: CPU0) to apply\n");
 }
 
@@ -70,7 +73,7 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "hap:")) != -1) {
+	while ((c = getopt(argc, argv, "hasp:")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -91,6 +94,10 @@ int parse_opts(config *cfg, int argc, char *argv[])
 					return -EINVAL;
 				}
 
+				break;
+
+			case 's':
+				no_readback = 1;
 				break;
 
 			case '?':
@@ -224,9 +231,13 @@ int msr_write(config *cfg)
 			fprintf_s(stderr, "%s(): CPU%zu WrmsrTx() failed\n", __func__, i);
 		}
 
+		if (no_readback)
+			break;
+
 		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 		}
+
 		fprintf_s(stdout, "%s(): ret: CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
