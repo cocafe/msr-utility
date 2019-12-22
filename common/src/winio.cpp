@@ -20,3 +20,13 @@ void WinIO_deinit(void)
 {
 	return ShutdownWinIo();
 }
+
+int WinIO_install(wchar_t *driver_path)
+{
+	return InstallWinIoDriver(driver_path, false);
+}
+
+int WinIO_remove(void)
+{
+	return RemoveWinIoDriver();
+}
