@@ -15,6 +15,8 @@
 #include "ini_config.h"
 
 #define DEFAULT_CONFIG_INI			"./msr-watchdog.ini"
+#define MSR_WATCHDOG_INTERVAL_MS		(3000)
+#define SHORT_OPTS				"hdwc:"
 
 LPCTSTR lpProgramName = L"msr watchdog";
 
@@ -22,9 +24,9 @@ static char* help_text[] = {
 	"-h	this help text\n",
 	"-d	enable debug output window\n",
 	"-c	specified config ini path\n",
+	"-w	enable WinIO, disabled by default,\n",
+	"	install WinIO driver manually first\n",
 };
-
-#define MSR_WATCHDOG_INTERVAL_MS		(3000)
 
 int msr_gen_reg_deamon(msr_regs *regs)
 {
@@ -131,6 +133,7 @@ void config_init(config *cfg)
 	memset(cfg, 0x00, sizeof(config));
 
 	cfg->oneshot = 0;
+	cfg->winio_enabled = 0;
 	cfg->watchdog_interval = MSR_WATCHDOG_INTERVAL_MS;
 	strncpy_s(cfg->ini_path, DEFAULT_CONFIG_INI, sizeof(cfg->ini_path));
 
@@ -196,7 +199,7 @@ int parse_opts(config* cfg, int argc, char* argv[])
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "hd")) != -1) {
+	while ((c = getopt(argc, argv, SHORT_OPTS)) != -1) {
 		switch (c) {
 		case 'h':
 			msgbox_help();
@@ -210,6 +213,10 @@ int parse_opts(config* cfg, int argc, char* argv[])
 
 		case 'c':
 			strncpy_s(cfg->ini_path, optarg, sizeof(cfg->ini_path));
+			break;
+
+		case 'w':
+			cfg->winio_enabled = 1;
 			break;
 
 		default:
@@ -242,9 +249,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		console_stdio_redirect();
 	}
 
-	ret = WinIO_init();
-	if (ret)
-		goto out;
+	if (cfg.winio_enabled) {
+		ret = WinIO_init();
+		if (ret)
+			goto out;
+	}
 
 	ret = WinRing0_init();
 	if (ret)
@@ -267,6 +276,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	msr_regs_dump(&cfg.regs);
 	mem_regs_dump(&cfg.pmem);
 
+	printf("\n%s(): start watchdog...\n", __func__);
+
 	while (1) {
 		if (msr_gen_reg_deamon(&cfg.regs))
 			break;
@@ -274,7 +285,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		if (msr_mailbox_deamon(&cfg.regs))
 			break;
 
-		if (pmem_deamon(&cfg.pmem))
+		if (cfg.winio_enabled && pmem_deamon(&cfg.pmem))
 			break;
 
 		if (cfg.oneshot) {
@@ -291,7 +302,9 @@ deinit:
 
 	config_deinit(&cfg);
 	WinRing0_deinit();
-	WinIO_deinit();
+
+	if (cfg.winio_enabled)
+		WinIO_deinit();
 
 out:
 	return ret;
