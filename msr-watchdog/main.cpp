@@ -15,6 +15,8 @@
 
 LPCTSTR lpProgramName = L"msr watchdog";
 
+static char g_ini_path[4096] = "./msr-watchdog.ini";
+
 #define MSR_WATCHDOG_INTERVAL_MS		(3000)
 
 int msr_gen_reg_deamon(msr_regs *regs)
@@ -198,7 +200,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	config_init(&cfg);
 
-	ret = load_ini("./msr-watchdog.ini", &cfg);
+	ret = load_ini(g_ini_path, &cfg);
 	if (ret) {
 		MessageBox(NULL, L"Failed to parse config .ini", lpProgramName, MB_ICONSTOP | MB_OK);
 		goto deinit;
