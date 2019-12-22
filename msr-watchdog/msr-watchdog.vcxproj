@@ -22,32 +22,32 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{3B742853-843C-4600-A32A-1DF45491CEFD}</ProjectGuid>
     <RootNamespace>msrwatchdog</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -133,22 +133,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\src\winio.cpp" />
     <ClCompile Include="..\common\src\winring0.cpp" />
     <ClCompile Include="ini_loader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mem_regs.cpp" />
     <ClCompile Include="msr_regs.cpp" />
-    <ClCompile Include="winio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\include\getopt.h" />
+    <ClInclude Include="..\common\include\winio.h" />
     <ClInclude Include="..\common\include\winring0.h" />
     <ClInclude Include="..\common\include\xeon_e5v4_msr.h" />
     <ClInclude Include="mem_regs.h" />
     <ClInclude Include="msr_regs.h" />
     <ClInclude Include="ini_config.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="winio.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -156,6 +156,9 @@
   <ItemGroup>
     <Image Include="icon.ico" />
     <Image Include="icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="msr-watchdog.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
