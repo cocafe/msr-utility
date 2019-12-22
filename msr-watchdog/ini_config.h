@@ -13,6 +13,7 @@ typedef struct configuration {
 	int		watchdog_interval;
 	int		oneshot;
 	int		debug;
+	int		winio_enabled;
 } config;
 
 int load_ini(const char *filepath, config *cfg);
