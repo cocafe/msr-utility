@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <Windows.h>
 #include <windowsx.h>
+#include <WinUser.h>
 
 #include <winio.h>
 #include <winring0.h>
@@ -16,6 +17,11 @@
 LPCTSTR lpProgramName = L"msr watchdog";
 
 static char g_ini_path[4096] = "./msr-watchdog.ini";
+
+static char* help_text[] = {
+	"-h	this help text\n",
+	"-d	enable debug output window\n",
+};
 
 #define MSR_WATCHDOG_INTERVAL_MS		(3000)
 
@@ -165,6 +171,50 @@ void console_stdio_redirect(void)
 	freopen_s(&CErrorHandle, "CONOUT$", "w", stderr);
 }
 
+void msgbox_help()
+{
+	char buf[4096] = { 0 };
+	size_t len = 0;
+
+	for (int i = 0; i < ARRAYSIZE(help_text); i++)
+		len += snprintf(&buf[len], sizeof(buf) - len, "%s", help_text[i]);
+
+	// ensure properly terminated
+	buf[sizeof(buf) - 1] = '\0';
+
+	MessageBoxA(NULL, buf, "msr-watchdog", MB_OK);
+}
+
+int parse_opts(config* cfg, int argc, char* argv[])
+{
+	int index;
+	int c;
+
+	(void)index;
+
+	opterr = 0;
+
+	while ((c = getopt(argc, argv, "hd")) != -1) {
+		switch (c) {
+		case 'h':
+			msgbox_help();
+			exit(0);
+
+			break;
+
+		case 'd':
+			cfg->debug = 1;
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+}
+
+
 int WINAPI WinMain(HINSTANCE hInstance, 
 		   HINSTANCE hPrevInstance,
 		   LPSTR lpCmdLine, 
@@ -173,10 +223,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	config cfg;
 	int ret = 0;
 
-	if (!strcmp(lpCmdLine, "-debug")) {
-		cfg.debug = 1;
-	} else {
-		cfg.debug = 0;
+	ret = parse_opts(&cfg, __argc, __argv);
+	if (ret) {
+		msgbox_help();
+		goto out;
 	}
 
 	if (cfg.debug) {
