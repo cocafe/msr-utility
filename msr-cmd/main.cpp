@@ -238,7 +238,7 @@ int msr_write(config *cfg)
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 		}
 
-		fprintf_s(stdout, "%s(): ret: CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
+		fprintf_s(stdout, "%s(): CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
 
