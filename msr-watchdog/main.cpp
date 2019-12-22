@@ -14,13 +14,14 @@
 #include "msr_regs.h"
 #include "ini_config.h"
 
-LPCTSTR lpProgramName = L"msr watchdog";
+#define DEFAULT_CONFIG_INI			"./msr-watchdog.ini"
 
-static char g_ini_path[4096] = "./msr-watchdog.ini";
+LPCTSTR lpProgramName = L"msr watchdog";
 
 static char* help_text[] = {
 	"-h	this help text\n",
 	"-d	enable debug output window\n",
+	"-c	specified config ini path\n",
 };
 
 #define MSR_WATCHDOG_INTERVAL_MS		(3000)
@@ -131,6 +132,7 @@ void config_init(config *cfg)
 
 	cfg->oneshot = 0;
 	cfg->watchdog_interval = MSR_WATCHDOG_INTERVAL_MS;
+	strncpy_s(cfg->ini_path, DEFAULT_CONFIG_INI, sizeof(cfg->ini_path));
 
 	msr_regs_init(&cfg->regs);
 	mem_regs_init(&cfg->pmem);
@@ -206,6 +208,10 @@ int parse_opts(config* cfg, int argc, char* argv[])
 			cfg->debug = 1;
 			break;
 
+		case 'c':
+			strncpy_s(cfg->ini_path, optarg, sizeof(cfg->ini_path));
+			break;
+
 		default:
 			break;
 		}
@@ -222,6 +228,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 {
 	config cfg;
 	int ret = 0;
+
+	config_init(&cfg);
 
 	ret = parse_opts(&cfg, __argc, __argv);
 	if (ret) {
@@ -248,15 +256,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		goto deinit;
 	}
 
-	config_init(&cfg);
-
-	ret = load_ini(g_ini_path, &cfg);
+	ret = load_ini(cfg.ini_path, &cfg);
 	if (ret) {
 		MessageBox(NULL, L"Failed to parse config .ini", lpProgramName, MB_ICONSTOP | MB_OK);
 		goto deinit;
 	}
 
-	printf("%s(): load config .ini successfully\n", __func__);
+	printf("%s(): load config %s successfully\n", __func__, cfg.ini_path);
 
 	msr_regs_dump(&cfg.regs);
 	mem_regs_dump(&cfg.pmem);
