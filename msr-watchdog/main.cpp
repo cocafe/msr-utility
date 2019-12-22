@@ -18,7 +18,8 @@
 #define MSR_WATCHDOG_INTERVAL_MS		(3000)
 #define SHORT_OPTS				"hdwc:"
 
-LPCTSTR lpProgramName = L"msr watchdog";
+static LPCTSTR lpProgramName = L"msr watchdog";
+static const char* program_name = "msr-watchdog";
 
 static char* help_text[] = {
 	"-h	this help text\n",
@@ -187,7 +188,7 @@ void msgbox_help()
 	// ensure properly terminated
 	buf[sizeof(buf) - 1] = '\0';
 
-	MessageBoxA(NULL, buf, "msr-watchdog", MB_OK);
+	MessageBoxA(NULL, buf, program_name, MB_OK);
 }
 
 int parse_opts(config* cfg, int argc, char* argv[])
