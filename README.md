@@ -30,11 +30,13 @@ Usages (may require administrator privilege):
 >
 > ​	Option:
 >
-> ​		-one 	load settings and apply once, no daemon
+> ​		-h		open help text GUI
 >
-> ​	Settings:
+> ​	
 >
-> ​		msr-regs.ini
+> ​	[Config Example](msr-watchdog/E5-2683v4-QHV3.ini)
+>
+> 
 
 > msr-cmd:
 >
@@ -44,11 +46,15 @@ Usages (may require administrator privilege):
 >
 > ​		msr-cmd.exe \[options] \[write] \[reg] \[edx(63-32)] \[eax(32-0)]
 >
+> 
+>
 > ​	Options:
 >
 > ​		-a		apply to all available processors
 >
 > ​		-p [CPU]	processor (default: CPU0) to apply
+>
+> 
 
 ------
 
