@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <windowsx.h>
 #include <WinUser.h>
+#include <processthreadsapi.h>
 
 #include <winio.h>
 #include <winring0.h>
@@ -278,6 +279,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	mem_regs_dump(&cfg.pmem);
 
 	printf("\n%s(): start watchdog...\n", __func__);
+
+	SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 
 	while (1) {
 		if (msr_gen_reg_deamon(&cfg.regs))
