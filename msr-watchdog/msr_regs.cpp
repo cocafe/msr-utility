@@ -124,6 +124,7 @@ int msr_mb_reg_create(msr_regs *regs, DWORD reg, int watch)
 
 	regs->mb_regs[regs->mb_regs_count].reg = reg;
 	regs->mb_regs[regs->mb_regs_count].watch = 1;
+	regs->mb_regs[regs->mb_regs_count].valid = 1;
 	regs->mb_regs_count++;
 
 	return 0;
@@ -138,32 +139,32 @@ int msr_mb_reg_fill(msr_regs *regs,
 		    DWORD *eax_ret,
 		    DWORD *edx_ret)
 {
-	size_t i;
+	msr_mb* mb;
 
-	for (i = 0; i < regs->mb_regs_count; i++)
-	{
-		if (regs->mb_regs[i].reg == reg) {
-			if (eax_get)
-				regs->mb_regs[i].eax_get = *eax_get;
-			if (edx_get)
-				regs->mb_regs[i].edx_get = *edx_get;
-			if (eax_set)
-				regs->mb_regs[i].eax_set = *eax_set;
-			if (edx_set)
-				regs->mb_regs[i].edx_set = *edx_set;
-			if (eax_ret)
-				regs->mb_regs[i].eax_ret = *eax_ret;
-			if (edx_ret)
-				regs->mb_regs[i].edx_ret = *edx_ret;
-
-			return 0;
-		}
+	if (regs->mb_regs_count <= 0) {
+		printf("register REG to lock via MailboxRegLock first\n");
+		return -ENOENT;
 	}
 
-	if (i >= regs->mb_regs_count)
-		return -ENOENT;
+	mb = &regs->mb_regs[regs->mb_regs_count - 1];
 
-	return -EFAULT;
+	if (!mb->valid)
+		return -EINVAL;
+
+	if (eax_get)
+		mb->eax_get = *eax_get;
+	if (edx_get)
+		mb->edx_get = *edx_get;
+	if (eax_set)
+		mb->eax_set = *eax_set;
+	if (edx_set)
+		mb->edx_set = *edx_set;
+	if (eax_ret)
+		mb->eax_ret = *eax_ret;
+	if (edx_ret)
+		mb->edx_ret = *edx_ret;
+
+	return 0;
 }
 
 int msr_regs_dump(msr_regs *regs)

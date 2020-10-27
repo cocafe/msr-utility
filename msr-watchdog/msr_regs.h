@@ -32,6 +32,7 @@ typedef struct msr_mailbox {
 	DWORD	edx_ret;
 
 	int	watch;
+	int	valid;
 } msr_mb;
 
 typedef struct msr_reg_list {
