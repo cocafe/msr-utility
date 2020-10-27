@@ -37,26 +37,26 @@ int msr_gen_reg_deamon(msr_regs *regs)
 		DWORD eax;
 		DWORD edx;
 		DWORD_PTR thread_mask = 0;
+		msr_reg *reg = &regs->gen_regs[i];
 
-		if (!regs->gen_regs[i].watch)
+		if (!reg->watch)
 			continue;
 
-		thread_mask = 1ULL << regs->gen_regs[i].proc;
+		thread_mask = 1ULL << reg->proc;
 
-		if (!RdmsrTx(regs->gen_regs[i].reg, &eax, &edx, thread_mask)) {
+		if (!RdmsrTx(reg->reg, &eax, &edx, thread_mask)) {
 			printf_s("%s(): RdmsrTx() failure\n", __func__);
 			return -EIO;
 		}
 
 		printf_s("%s(): RdmsrTx(): CPU%2u reg: %#010x edx: %#010x eax: %#010x\n",
-		       __func__, regs->gen_regs[i].proc, regs->gen_regs[i].reg, edx, eax);
+		       __func__, reg->proc, reg->reg, edx, eax);
 
-		if (eax != regs->gen_regs[i].eax || edx != regs->gen_regs[i].edx) {
+		if (eax != reg->eax || edx != reg->edx) {
 			printf_s("%s(): Register value differs, invoke WrmsrTx()\n", __func__);
-			if (!WrmsrTx(regs->gen_regs[i].reg,
-				     regs->gen_regs[i].eax,
-				     regs->gen_regs[i].edx,
-				     thread_mask)) {
+			printf_s("%s(): WrmsrTx(): CPU%2u reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
+				__func__, reg->proc, reg->reg, reg->edx, reg->eax);
+			if (!WrmsrTx(reg->reg, reg->eax, reg->edx, thread_mask)) {
 				int ret_msgbox = MessageBox(NULL, L"WinRing0 driver failed to write register, continue?", 
 							    lpProgramName, MB_ICONWARNING | MB_YESNO);
 				if (ret_msgbox == IDNO)
@@ -92,11 +92,13 @@ int msr_mailbox_deamon(msr_regs *regs)
 			return -EIO;
 		}
 
-		printf_s("%s(): RdmsrTx(): cpu: %d reg: %#010x edx: %#010x eax: %#010x\n",
+		printf_s("%s(): RdmsrTx(): CPU%2u reg: %#010x edx: %#010x eax: %#010x\n",
 			 __func__, mb->cpu, mb->reg, edx, eax);
 
 		if (mb->eax_ret != eax || mb->edx_ret != edx) {
 			printf_s("%s(): Register value differs, call WrmsrTx()\n", __func__);
+			printf_s("%s(): WrmsrTx(): CPU%2u reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
+				__func__, mb->cpu, mb->reg, mb->edx_set, mb->eax_set);
 			if (!WrmsrTx(mb->reg, mb->eax_set, mb->edx_set, thread_mask)) {
 				printf_s("%s(): WrmsrTx() failure\n", __func__);
 
