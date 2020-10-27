@@ -74,29 +74,32 @@ int msr_mailbox_deamon(msr_regs *regs)
 	{
 		DWORD eax;
 		DWORD edx;
+		DWORD_PTR thread_mask = 0;
+		msr_mb* mb = &regs->mb_regs[i];
 
-		if (!regs->mb_regs[i].watch)
+		if (!mb->watch)
 			continue;
 
-		if (!Wrmsr(regs->mb_regs[i].reg,
-			   regs->mb_regs[i].eax_get,
-			   regs->mb_regs[i].edx_get)) {
-			printf_s("%s(): Wrmsr() failure\n", __func__);
+		thread_mask = 1ULL << mb->cpu;
+
+		if (!WrmsrTx(mb->reg, mb->eax_get, mb->edx_get, thread_mask)) {
+			printf_s("%s(): WrmsrTx() failure\n", __func__);
 			return -EIO;
 		}
-		if (!Rdmsr(regs->mb_regs[i].reg, &eax, &edx)) {
+
+		if (!RdmsrTx(mb->reg, &eax, &edx, thread_mask)) {
 			printf_s("%s(): Rdmsr() failure\n", __func__);
 			return -EIO;
 		}
 
-		printf_s("%s(): Rdmsr(): reg: %#010x edx: %#010x eax: %#010x\n",
-		       __func__, regs->mb_regs[i].reg, edx, eax);
+		printf_s("%s(): RdmsrTx(): cpu: %d reg: %#010x edx: %#010x eax: %#010x\n",
+			 __func__, mb->cpu, mb->reg, edx, eax);
 
-		if (regs->mb_regs[i].eax_ret != eax || regs->mb_regs[i].edx_ret != edx) {
-			printf_s("%s(): Register value differs, call Wrmsr()\n", __func__);
-			if (!Wrmsr(regs->mb_regs[i].reg,
-				   regs->mb_regs[i].eax_set,
-				   regs->mb_regs[i].edx_set)) {
+		if (mb->eax_ret != eax || mb->edx_ret != edx) {
+			printf_s("%s(): Register value differs, call WrmsrTx()\n", __func__);
+			if (!WrmsrTx(mb->reg, mb->eax_set, mb->edx_set, thread_mask)) {
+				printf_s("%s(): WrmsrTx() failure\n", __func__);
+
 				int ret_msgbox = MessageBox(NULL, L"WinRing0 driver failed to write register, continue?",
 							    lpProgramName, MB_ICONWARNING | MB_YESNO);
 				if (ret_msgbox == IDNO)

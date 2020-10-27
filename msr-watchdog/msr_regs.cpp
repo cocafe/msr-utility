@@ -116,15 +116,19 @@ int msr_gen_reg_insert(msr_regs *regs,
 	return 0;
 }
 
-int msr_mb_reg_create(msr_regs *regs, DWORD reg, int watch)
+int msr_mb_reg_create(msr_regs *regs, DWORD reg, DWORD cpu, int watch)
 {
 	if (msr_regs_is_full(regs))
 		if (msr_regs_expand(regs, 0, REG_MAILBOX))
 			return -ENOMEM;
 
-	regs->mb_regs[regs->mb_regs_count].reg = reg;
-	regs->mb_regs[regs->mb_regs_count].watch = 1;
-	regs->mb_regs[regs->mb_regs_count].valid = 1;
+	msr_mb *mb = &regs->mb_regs[regs->mb_regs_count];
+
+	mb->cpu = cpu;
+	mb->reg = reg;
+	mb->watch = 1;
+	mb->valid = 1;
+
 	regs->mb_regs_count++;
 
 	return 0;

@@ -20,6 +20,7 @@ typedef struct msr_reg {
 } msr_reg;
 
 typedef struct msr_mailbox {
+	DWORD	cpu;
 	DWORD	reg;
 
 	DWORD	eax_get;
@@ -54,7 +55,7 @@ int msr_gen_reg_insert(msr_regs *regs,
 		       DWORD eax,
 		       DWORD edx,
 		       int watch);
-int msr_mb_reg_create(msr_regs *regs, DWORD reg, int watch);
+int msr_mb_reg_create(msr_regs *regs, DWORD reg, DWORD cpu, int watch);
 int msr_mb_reg_fill(msr_regs *regs,
 		    DWORD reg,
 		    DWORD *eax_get,

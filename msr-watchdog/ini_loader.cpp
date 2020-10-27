@@ -28,7 +28,7 @@ enum {
 ini_item ini_items[] = {
 	{ "WatchdogIntervalMS",	"WatchdogIntervalMS=%d",		1 },
 	{ "MSRGeneralRegLock",	"MSRGeneralRegLock=%u, %x, %x, %x",	4 },
-	{ "MailboxRegLock",	"MailboxRegLock=%x",			1 },
+	{ "MailboxRegLock",	"MailboxRegLock=%x, %d",		2 },
 	{ "MailboxRegGet",	"MailboxRegGet=%x, %x, %x",		3 },
 	{ "MailboxRegSet",	"MailboxRegSet=%x, %x, %x",		3 },
 	{ "MailboxRegRet",	"MailboxRegRet=%x, %x, %x",		3 },
@@ -93,13 +93,13 @@ int parse_ini(char *buf, size_t len, config *cfg)
 	}
 
 	if (!strncmp(ini_items[MailboxRegLock].name, buf, strlen(ini_items[MailboxRegLock].name))) {
-		DWORD reg;
+		DWORD reg, cpu;
 
-		if (sscanf_s(buf, ini_items[MailboxRegLock].fmt, &reg)
+		if (sscanf_s(buf, ini_items[MailboxRegLock].fmt, &reg, &cpu)
 		    != ini_items[MailboxRegLock].opts)
 			return 1;
 
-		if (msr_mb_reg_create(&cfg->regs, reg, 1))
+		if (msr_mb_reg_create(&cfg->regs, reg, cpu, 1))
 			return 1;
 
 		return 0;
