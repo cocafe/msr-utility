@@ -36,27 +36,60 @@ ini_item ini_items[] = {
 	{ "PhysicalMemoryLock", "PhysicalMemoryLock=%I64x, %x",         2 },
 };
 
-void readline(FILE *fp, char *buf, size_t len)
+#define LINE_BUF_MAX			(4096)
+#define CFG_COMMENT_CHAR		('#')
+
+static inline int is_empty_line(char *buf)
 {
+	if (buf[0] == '\n' || buf[0] == '\r')
+		return 1;
+
+	return 0;
+}
+
+static inline char *whitespace_skip(char *buf, size_t len)
+{
+	// ASCII encoding only, horizontal whitespace: ' ', '\t'
+	// seek the buffer to first valid char
+
+	for (size_t i = 0; i < len; i++) {
+		if (buf[i] != ' ' && buf[i] != '\t')
+			return (buf + i);
+	}
+
+	return buf;
+}
+
+static inline int is_comment(char *buf)
+{
+	if (buf[0] == CFG_COMMENT_CHAR)
+		return 1;
+
+	return 0;
+}
+
+size_t readline(FILE *fp, char *buf, size_t len)
+{
+	size_t i = 0;
+
 	memset(buf, '\0', len);
 
-	for (size_t i = 0; i < len; i++)
-	{
+	while (i < len) {
 		char c;
 
 		c = (char)fgetc(fp);
 
-		if (feof(fp))
-			break;
-
-		if (ferror(fp))
+		if (feof(fp) || ferror(fp))
 			break;
 
 		buf[i] = c;
+		i++;
 
 		if (c == '\n')
 			break;
 	}
+
+	return i;
 }
 
 int parse_ini(char *buf, size_t len, config *cfg)
@@ -169,41 +202,44 @@ int parse_ini(char *buf, size_t len, config *cfg)
 
 int load_ini(const char *filepath, config *cfg)
 {
-	FILE *fp;
+	char buf[LINE_BUF_MAX];
+	char *seek;
 	size_t line;
-	char buf[1024];
-	errno_t err;
+	FILE *fp;
+        int err = 0;
 
 	err = fopen_s(&fp, filepath, "r");
-	if (!fp)
+        if (!fp)
 		return err;
 
 	line = 0;
-	while (1) {
-		readline(fp, buf, sizeof(buf));
-		line++;
+        while (1) {
+		if (readline(fp, buf, sizeof(buf))) {
+			line++;
 
-		if (feof(fp))
-			break;
+			seek = whitespace_skip(buf, sizeof(buf));
 
-		if (ferror(fp))
-			break;
+			if (is_empty_line(seek))
+				continue;
 
-		//printf("%d %s", line, buf);
+			if (is_comment(seek))
+				continue;
 
-		// XXX: what if we have whitespaces before #
-		if (buf[0] == '#' || buf[0] == '\n') {
-			continue;
+			size_t offset = seek - buf;
+			size_t len = sizeof(buf) - offset;
+
+			if (parse_ini(seek, len, cfg)) {
+				printf_s("%s(): parsing failure at line %zd: %s\n", __func__, line, buf);
+				err = -EINVAL;
+				goto out;
+			}
 		}
 
-		if (parse_ini(buf, sizeof(buf), cfg)) {
-			printf_s("%s(): parsing failure at line %zd: %s\n", __func__, line, buf);
-			fclose(fp);
+		if (feof(fp) || ferror(fp))
+			break;
+        }
 
-			return -EFAULT;
-		}
-	}
-
+out:
 	fclose(fp);
 
 	return 0;
