@@ -195,15 +195,16 @@ int msr_read(config *cfg)
 	}
 
 	for (size_t i = min; i <= max; i++) {
-		DWORD eax, edx = 0;
+		DWORD eax = 0, edx = 0;
 		DWORD_PTR thread_mask = 0;
 
 		thread_mask = 1ULL << i;
 		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
+			return -EIO;
 		}
 
-		fprintf_s(stdout, "%s(): CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n", 
+		fprintf_s(stdout, "%s(): CPU%zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n", 
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
 
@@ -223,22 +224,26 @@ int msr_write(config *cfg)
 	}
 
 	for (size_t i = min; i <= max; i++) {
-		DWORD eax, edx = 0;
+		DWORD eax = 0, edx = 0;
 		DWORD_PTR thread_mask = 0;
 
 		thread_mask = 1ULL << i;
 		if (!WrmsrTx(cfg->msr_reg, cfg->eax, cfg->edx, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu WrmsrTx() failed\n", __func__, i);
+			return -EIO;
 		}
 
 		if (no_readback)
 			break;
 
+		eax = edx = 0;
+
 		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
+			return -EIO;
 		}
 
-		fprintf_s(stdout, "%s(): CPU%2zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
+		fprintf_s(stdout, "%s(): CPU%zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
 			  __func__, i, cfg->msr_reg, edx, eax);
 	}
 
@@ -247,6 +252,7 @@ int msr_write(config *cfg)
 
 int main(int argc, char *argv[])
 {
+	int ret = 0;
 	config cfg;
 
 	config_init(&cfg);
@@ -276,11 +282,11 @@ int main(int argc, char *argv[])
 
 	switch (cfg.msr_op) {
 		case MSR_OPS_READ:
-			msr_read(&cfg);
+			ret = msr_read(&cfg);
 			break;
 
 		case MSR_OPS_WRITE:
-			msr_write(&cfg);
+			ret = msr_write(&cfg);
 			break;
 
 		default:
@@ -290,5 +296,5 @@ int main(int argc, char *argv[])
 deinit:
 	WinRing0_deinit();
 
-	return 0;
+	return ret;
 }
