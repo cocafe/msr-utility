@@ -11,7 +11,8 @@
 
 #define ARRAY_SIZE(arr)				(sizeof(arr) / sizeof(arr[0]))
 
-static int no_readback;
+static int no_readback = 0;
+static int no_column_item = 0;
 
 typedef struct msr_op {
 	uint32_t idx;
@@ -63,6 +64,7 @@ void print_help(void)
 	fprintf_s(stdout, "Options:\n");
 	fprintf_s(stdout, "	-a		apply to all available processors\n");
 	fprintf_s(stdout, "	-s		write only do not read back\n");
+	fprintf_s(stdout, "	-d		data only, not to print column item name\n");
 	fprintf_s(stdout, "	-p [CPU]	processor (default: CPU0) to apply\n");
 }
 
@@ -73,7 +75,7 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "hasp:")) != -1) {
+	while ((c = getopt(argc, argv, "hasdp:")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -98,6 +100,10 @@ int parse_opts(config *cfg, int argc, char *argv[])
 
 			case 's':
 				no_readback = 1;
+				break;
+
+			case 'd':
+				no_column_item = 1;
 				break;
 
 			case '?':
@@ -185,6 +191,7 @@ int config_init(config *cfg)
 int msr_read(config *cfg)
 {
 	uint32_t min, max;
+	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
@@ -204,8 +211,12 @@ int msr_read(config *cfg)
 			return -EIO;
 		}
 
-		fprintf_s(stdout, "%s(): CPU%zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n", 
-			  __func__, i, cfg->msr_reg, edx, eax);
+		if (!col_printed && !no_column_item) {
+			fprintf_s(stdout, "%-8s %-10s %-10s %-10s\n", "CPU", "REG", "EDX", "EAX");
+			col_printed = 1;
+		}
+
+		fprintf_s(stdout, "%-8zu 0x%08x 0x%08x 0x%08x\n", i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
@@ -214,6 +225,7 @@ int msr_read(config *cfg)
 int msr_write(config *cfg)
 {
 	uint32_t min, max;
+	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
@@ -243,8 +255,12 @@ int msr_write(config *cfg)
 			return -EIO;
 		}
 
-		fprintf_s(stdout, "%s(): CPU%zu reg: 0x%08x edx: 0x%08x eax: 0x%08x\n",
-			  __func__, i, cfg->msr_reg, edx, eax);
+		if (!col_printed && !no_column_item) {
+			fprintf_s(stdout, "%-8s %-10s %-10s %-10s\n", "CPU", "REG", "EDX", "EAX");
+			col_printed = 1;
+		}
+
+		fprintf_s(stdout, "%-8zu 0x%08x 0x%08x 0x%08x\n", i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
