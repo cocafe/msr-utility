@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 		return -EFAULT;
 
 	if (parse_opts(&cfg, argc, argv)) {
-		print_help();
+		// print_help();
 		return -EINVAL;
 	}
 
