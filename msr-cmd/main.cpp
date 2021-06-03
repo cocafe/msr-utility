@@ -354,7 +354,7 @@ int msr_write(config_t *cfg)
 		}
 
 		if (no_readback)
-			break;
+			continue;
 
 		eax = edx = 0;
 
