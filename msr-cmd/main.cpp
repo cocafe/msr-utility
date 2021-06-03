@@ -315,7 +315,7 @@ int msr_read(config_t *cfg)
 
 		thread_mask = 1ULL << i;
 		if (!RdmsrPGrp(cfg->msr_reg, &eax, &edx, cfg->proc_group, thread_mask)) {
-			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu read msr failed\n", __func__, i);
 			return -EIO;
 		}
 
@@ -349,7 +349,7 @@ int msr_write(config_t *cfg)
 
 		thread_mask = 1ULL << i;
 		if (!WrmsrPGrp(cfg->msr_reg, cfg->eax, cfg->edx, cfg->proc_group, thread_mask)) {
-			fprintf_s(stderr, "%s(): CPU%zu WrmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu write msr failed\n", __func__, i);
 			return -EIO;
 		}
 
@@ -359,7 +359,7 @@ int msr_write(config_t *cfg)
 		eax = edx = 0;
 
 		if (!RdmsrPGrp(cfg->msr_reg, &eax, &edx, cfg->proc_group, thread_mask)) {
-			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
+			fprintf_s(stderr, "%s(): CPU%zu read msr failed\n", __func__, i);
 			return -EIO;
 		}
 
