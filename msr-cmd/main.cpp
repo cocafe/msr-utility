@@ -38,14 +38,65 @@ enum params_not_opt {
 };
 
 typedef struct configuration {
+	uint32_t proc_group;
 	uint32_t proc_all;
 	uint32_t proc;
-	uint32_t nproc;
-	uint32_t msr_op;
+	int      msr_op;
 	uint32_t msr_reg;
 	uint32_t edx;
 	uint32_t eax;
-} config;
+} config_t;
+
+typedef struct sysinfo {
+	DWORD nr_pgrp;
+	DWORD *nr_proc;
+} sysinfo_t;
+
+sysinfo_t g_sysinfo;
+
+static BOOL WINAPI RdmsrPGrp(DWORD index, PDWORD eax, PDWORD edx, DWORD grp, DWORD_PTR aff_mask)
+{
+	BOOL result = FALSE;
+	HANDLE hThread = NULL;
+	GROUP_AFFINITY old_aff = { 0 }, new_aff = { 0 };
+
+	hThread = GetCurrentThread();
+
+	new_aff.Group = (WORD)grp;
+	new_aff.Mask = aff_mask;
+
+	if (SetThreadGroupAffinity(hThread, &new_aff, &old_aff) == 0)
+		return FALSE;
+
+	result = Rdmsr(index, eax, edx);
+
+	if (SetThreadGroupAffinity(hThread, &old_aff, NULL) == 0)
+		return FALSE;
+
+	return result;
+}
+
+static BOOL WINAPI WrmsrPGrp(DWORD index, DWORD eax, DWORD edx, DWORD grp, DWORD_PTR aff_mask)
+{
+	BOOL result = FALSE;
+	HANDLE hThread = NULL;
+	GROUP_AFFINITY old_aff = { 0 }, new_aff = { 0 };
+
+	hThread = GetCurrentThread();
+
+	new_aff.Group = (WORD)grp;
+	new_aff.Mask = aff_mask;
+
+	if (SetThreadGroupAffinity(hThread, &new_aff, &old_aff) == 0)
+		return FALSE;
+
+	result = Wrmsr(index, eax, edx);
+
+	if (SetThreadGroupAffinity(hThread, &old_aff, NULL) == 0)
+		return FALSE;
+
+	return result;
+}
 
 uint32_t nproc_get(void)
 {
@@ -56,26 +107,69 @@ uint32_t nproc_get(void)
 	return sysinfo.dwNumberOfProcessors;
 }
 
+int sysinfo_init(sysinfo_t *info)
+{
+	WORD nr_grps = GetActiveProcessorGroupCount();
+
+	memset(info, 0x00, sizeof(*info));
+
+	if (nr_grps == 0) {
+		fprintf_s(stderr, "%s(): no processor group found\n", __func__);
+		return -1;
+	}
+
+	info->nr_pgrp = nr_grps;
+	info->nr_proc = (DWORD *)calloc(nr_grps, sizeof(DWORD));
+	if (!info->nr_proc) {
+		fprintf_s(stderr, "%s(): failed to allocate memory", __func__);
+		return -1;
+	}
+
+	for (int i = 0; i < nr_grps; i++) {
+		DWORD nr_proc = GetActiveProcessorCount(i);
+
+		if (nr_proc == 0) {
+			fprintf_s(stderr, "%s(): GetActiveProcessorCount() failed, err = %lu\n", __func__, GetLastError());
+			return -1;
+		}
+
+		info->nr_proc[i] = nr_proc;
+
+		// fprintf_s(stdout, "%s(): group %d has %d processors\n", __func__, i, nr_proc);
+	}
+
+	return 0;
+}
+
+void sysinfo_deinit(sysinfo_t* info)
+{
+	if (info->nr_proc)
+		free(info->nr_proc);
+
+	memset(info, 0x00, sizeof(*info));
+}
+
 void print_help(void)
 {
 	fprintf_s(stdout, "Usage:\n"
 			  "	msr-cmd.exe [options] [read]  [reg]\n"
 			  "	msr-cmd.exe [options] [write] [reg] [edx(63 - 32)] [eax(31 - 0)]\n");
 	fprintf_s(stdout, "Options:\n");
-	fprintf_s(stdout, "	-a		apply to all available processors\n");
 	fprintf_s(stdout, "	-s		write only do not read back\n");
 	fprintf_s(stdout, "	-d		data only, not to print column item name\n");
-	fprintf_s(stdout, "	-p [CPU]	processor (default: CPU0) to apply\n");
+	fprintf_s(stdout, "	-g <GRP>	processor group (default: 0) to apply\n");
+	fprintf_s(stdout, "	-p <CPU>	logical processor (default: 0) of processor group to apply\n");
+	fprintf_s(stdout, "	-a		apply to all available processors in group\n");
 }
 
-int parse_opts(config *cfg, int argc, char *argv[])
+int parse_opts(config_t *cfg, int argc, char *argv[])
 {
 	int index;
 	int c;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "hasdp:")) != -1) {
+	while ((c = getopt(argc, argv, "hasdg:p:")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -85,14 +179,29 @@ int parse_opts(config *cfg, int argc, char *argv[])
 				cfg->proc_all = 1;
 				break;
 
+			case 'g':
+				if (sscanf_s(optarg, "%u", &cfg->proc_group) != 1) {
+					fprintf_s(stderr, "%s(): failed to parse argument for -p\n", __func__);
+					return -EINVAL;
+				}
+
+				if (cfg->proc_group >= g_sysinfo.nr_pgrp) {
+					fprintf_s(stderr, "%s(): exceeded maximum processor group count %u on system\n", __func__, g_sysinfo.nr_pgrp);
+					return -EINVAL;
+				}
+
+				break;
+
 			case 'p':
 				if (sscanf_s(optarg, "%u", &cfg->proc) != 1) {
 					fprintf_s(stderr, "%s(): failed to parse argument for -p\n", __func__);
 					return -EINVAL;
 				}
 				
-				if (cfg->proc > (cfg->nproc - 1)) {
-					fprintf_s(stderr, "%s(): invalid processor id\n", __func__);
+				// '-g' must be passed first to work properly
+				// incase we have two different processors group?
+				if (cfg->proc >= g_sysinfo.nr_proc[cfg->proc_group]) {
+					fprintf_s(stderr, "%s(): invalid processor id for processor gruop %u\n", __func__, cfg->proc_group);
 					return -EINVAL;
 				}
 
@@ -109,6 +218,8 @@ int parse_opts(config *cfg, int argc, char *argv[])
 			case '?':
 				if (optopt == 'p')
 					fprintf_s(stderr, "%s(): option -p needs an arguemnt\n", __func__);
+				if (optopt == 'g')
+					fprintf_s(stderr, "%s(): option -g needs an arguemnt\n", __func__);
 				else if (isprint(optopt))
 					fprintf_s(stderr, "%s(): unknonw option -%c\n", __func__, optopt);
 				else
@@ -178,24 +289,21 @@ int parse_opts(config *cfg, int argc, char *argv[])
 	return 0;
 }
 
-int config_init(config *cfg)
+int config_init(config_t *cfg)
 {
-	memset(cfg, 0x00, sizeof(config));
-
-	cfg->proc = 0;
-	cfg->nproc = nproc_get();
+	memset(cfg, 0x00, sizeof(config_t));
 
 	return 0;
 }
 
-int msr_read(config *cfg)
+int msr_read(config_t *cfg)
 {
 	uint32_t min, max;
 	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
-		max = cfg->nproc - 1;
+		max = g_sysinfo.nr_proc[cfg->proc_group] - 1;
 	} else {
 		min = cfg->proc;
 		max = cfg->proc;
@@ -206,7 +314,7 @@ int msr_read(config *cfg)
 		DWORD_PTR thread_mask = 0;
 
 		thread_mask = 1ULL << i;
-		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
+		if (!RdmsrPGrp(cfg->msr_reg, &eax, &edx, cfg->proc_group, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 			return -EIO;
 		}
@@ -222,14 +330,14 @@ int msr_read(config *cfg)
 	return 0;
 }
 
-int msr_write(config *cfg)
+int msr_write(config_t *cfg)
 {
 	uint32_t min, max;
 	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
-		max = cfg->nproc - 1;
+		max = g_sysinfo.nr_proc[cfg->proc_group] - 1;
 	} else {
 		min = cfg->proc;
 		max = cfg->proc;
@@ -240,7 +348,7 @@ int msr_write(config *cfg)
 		DWORD_PTR thread_mask = 0;
 
 		thread_mask = 1ULL << i;
-		if (!WrmsrTx(cfg->msr_reg, cfg->eax, cfg->edx, thread_mask)) {
+		if (!WrmsrPGrp(cfg->msr_reg, cfg->eax, cfg->edx, cfg->proc_group, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu WrmsrTx() failed\n", __func__, i);
 			return -EIO;
 		}
@@ -250,7 +358,7 @@ int msr_write(config *cfg)
 
 		eax = edx = 0;
 
-		if (!RdmsrTx(cfg->msr_reg, &eax, &edx, thread_mask)) {
+		if (!RdmsrPGrp(cfg->msr_reg, &eax, &edx, cfg->proc_group, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu RdmsrTx() failed\n", __func__, i);
 			return -EIO;
 		}
@@ -269,9 +377,11 @@ int msr_write(config *cfg)
 int main(int argc, char *argv[])
 {
 	int ret = 0;
-	config cfg;
+	config_t cfg;
 
 	config_init(&cfg);
+	if (sysinfo_init(&g_sysinfo))
+		return -EFAULT;
 
 	if (parse_opts(&cfg, argc, argv)) {
 		print_help();
@@ -311,6 +421,7 @@ int main(int argc, char *argv[])
 	
 deinit:
 	WinRing0_deinit();
+	sysinfo_deinit(&g_sysinfo);
 
 	return ret;
 }
