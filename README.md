@@ -1,4 +1,4 @@
-# msr-cmd, msr-watchdog 
+# msr-cmd & msr-watchdog 
 
 ------
 
@@ -6,13 +6,15 @@ Two little utilities to set and keep Model Specific Registers (MSR) as you like 
 
 ------
 
-For example, my Xeon E5v4 does not set maximum uncore (cache) clock (results +5%~10% cache performance) by default, and it's unable to tweak via UEFI. Figure out the the uncore clock multiplier MSR register (check out Intel Software Developer Manual) and use **msr-watchdog** to set and keep its value on the fly (as a daemon). Because suspend or resume system will reset the MSR registers.
+For example, my Xeon E5-v4 ES does not set maximum uncore (cache) clock (results +5%~10% cache performance) by default, and it's unable to tweak via UEFI. Figure out the the uncore clock multiplier MSR register (check out Intel Software Developer Manual) and use **msr-watchdog** to set and keep its value on the fly (as a daemon). Because suspend or resume system will reset the MSR registers.
 
 Also, it can lock MSR mailbox registers (some relate to voltages), too. These values like voltages settings can be yielded from ThrottleStop.
 
 **msr-cmd** is something like **wrmsr** from Intel msr-tools in Linux world, which can be used in batch scripts.
 
 All these utilities are based on WinRing0 driver, no WDK is required.
+
+Release tarball contain a **V3 turbo** scripts which utilizes **msr-cmd** to update microcode and unlock turbo bin without inserting UEFI driver. 
 
 -----
 
@@ -50,11 +52,11 @@ Usages (may require administrator privilege):
 >
 > ​	Options:
 >
-> ​		-a		apply to all available processors
->
-> ​		-p [CPU]	processor (default: CPU0) to apply
->
-> 
+> ​		-s              write only do not read back
+>    	 -d              data only, not to print column item name
+> ​    	-g <GRP>        processor group (default: 0) to apply
+>    	 -p <CPU>        logical processor (default: 0) of processor group to apply
+> ​    	-a              apply to all available processors in group
 
 ------
 
