@@ -40,6 +40,7 @@ enum params_not_opt {
 typedef struct configuration {
 	uint32_t proc_group;
 	uint32_t proc_all;
+	uint32_t group_all;
 	uint32_t proc;
 	int      msr_op;
 	uint32_t msr_reg;
@@ -157,9 +158,10 @@ void print_help(void)
 	fprintf_s(stdout, "Options:\n");
 	fprintf_s(stdout, "	-s		write only do not read back\n");
 	fprintf_s(stdout, "	-d		data only, not to print column item name\n");
-	fprintf_s(stdout, "	-g <GRP>	processor group (default: 0) to apply\n");
+	fprintf_s(stdout, "	-g <GRP>	processor group (default: 0) to apply, a group contains up to 64 logical processors\n");
 	fprintf_s(stdout, "	-p <CPU>	logical processor (default: 0) of processor group to apply\n");
 	fprintf_s(stdout, "	-a		apply to all available processors in group\n");
+	fprintf_s(stdout, "	-A		apply to all available processors in all available processor groups\n");
 }
 
 int parse_opts(config_t *cfg, int argc, char *argv[])
@@ -169,7 +171,7 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "hasdg:p:")) != -1) {
+	while ((c = getopt(argc, argv, "haAsdg:p:")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -177,6 +179,11 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 
 			case 'a':
 				cfg->proc_all = 1;
+				break;
+
+			case 'A':
+				cfg->proc_all = 1;
+				cfg->group_all = 1;
 				break;
 
 			case 'g':
@@ -299,7 +306,6 @@ int config_init(config_t *cfg)
 int msr_read(config_t *cfg)
 {
 	uint32_t min, max;
-	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
@@ -319,12 +325,7 @@ int msr_read(config_t *cfg)
 			return -EIO;
 		}
 
-		if (!col_printed && !no_column_item) {
-			fprintf_s(stdout, "%-8s %-10s %-10s %-10s\n", "CPU", "REG", "EDX", "EAX");
-			col_printed = 1;
-		}
-
-		fprintf_s(stdout, "%-8zu 0x%08x 0x%08x 0x%08x\n", i, cfg->msr_reg, edx, eax);
+		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
@@ -333,7 +334,6 @@ int msr_read(config_t *cfg)
 int msr_write(config_t *cfg)
 {
 	uint32_t min, max;
-	uint32_t col_printed = 0;
 
 	if (cfg->proc_all) {
 		min = 0;
@@ -363,15 +363,30 @@ int msr_write(config_t *cfg)
 			return -EIO;
 		}
 
-		if (!col_printed && !no_column_item) {
-			fprintf_s(stdout, "%-8s %-10s %-10s %-10s\n", "CPU", "REG", "EDX", "EAX");
-			col_printed = 1;
-		}
-
-		fprintf_s(stdout, "%-8zu 0x%08x 0x%08x 0x%08x\n", i, cfg->msr_reg, edx, eax);
+		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
+}
+
+int rwmsr(config_t *cfg)
+{
+	int ret = -EINVAL;
+
+	switch (cfg->msr_op) {
+	case MSR_OPS_READ:
+		ret = msr_read(cfg);
+		break;
+
+	case MSR_OPS_WRITE:
+		ret = msr_write(cfg);
+		break;
+
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 int main(int argc, char *argv[])
@@ -406,19 +421,19 @@ int main(int argc, char *argv[])
 		goto deinit;
 	}
 
-	switch (cfg.msr_op) {
-		case MSR_OPS_READ:
-			ret = msr_read(&cfg);
-			break;
-
-		case MSR_OPS_WRITE:
-			ret = msr_write(&cfg);
-			break;
-
-		default:
-			break;
+	if (!no_column_item) {
+		fprintf_s(stdout, "%-8s %-8s %-10s %-10s %-10s\n", "GROUP", "CPU", "REG", "EDX", "EAX");
 	}
 	
+	if (cfg.group_all) {
+		for (uint32_t i = 0; i < g_sysinfo.nr_pgrp; i++) {
+			cfg.proc_group = i;
+			ret = rwmsr(&cfg);
+		}
+	} else {
+		ret = rwmsr(&cfg);
+	}
+
 deinit:
 	WinRing0_deinit();
 	sysinfo_deinit(&g_sysinfo);
