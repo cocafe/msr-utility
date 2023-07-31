@@ -13,6 +13,7 @@
 
 static int no_readback = 0;
 static int no_column_item = 0;
+static int dry_run = 0;
 
 typedef struct msr_op {
 	uint32_t idx;
@@ -162,6 +163,7 @@ void print_help(void)
 	fprintf_s(stdout, "	-p <CPU>	logical processor (default: 0) of processor group to apply\n");
 	fprintf_s(stdout, "	-a		apply to all available processors in group\n");
 	fprintf_s(stdout, "	-A		apply to all available processors in all available processor groups\n");
+	fprintf_s(stdout, "     -t		dry run\n");
 }
 
 int parse_opts(config_t *cfg, int argc, char *argv[])
@@ -171,7 +173,7 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "haAsdg:p:")) != -1) {
+	while ((c = getopt(argc, argv, "haAsdg:p:t")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -220,6 +222,10 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 
 			case 'd':
 				no_column_item = 1;
+				break;
+
+			case 't':
+				dry_run = 1;
 				break;
 
 			case '?':
@@ -319,6 +325,11 @@ int msr_read(config_t *cfg)
 		DWORD eax = 0, edx = 0;
 		DWORD_PTR thread_mask = 0;
 
+		if (dry_run) {
+			fprintf_s(stdout, "%-8u %-8zu 0x%08x\n", cfg->proc_group, i, cfg->msr_reg);
+			continue;
+		}
+
 		thread_mask = 1ULL << i;
 		if (!RdmsrPGrp(cfg->msr_reg, &eax, &edx, cfg->proc_group, thread_mask)) {
 			fprintf_s(stderr, "%s(): CPU%zu read msr failed\n", __func__, i);
@@ -346,6 +357,11 @@ int msr_write(config_t *cfg)
 	for (size_t i = min; i <= max; i++) {
 		DWORD eax = 0, edx = 0;
 		DWORD_PTR thread_mask = 0;
+
+		if (dry_run) {
+			fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, cfg->edx, cfg->eax);
+			continue;
+		}
 
 		thread_mask = 1ULL << i;
 		if (!WrmsrPGrp(cfg->msr_reg, cfg->eax, cfg->edx, cfg->proc_group, thread_mask)) {
