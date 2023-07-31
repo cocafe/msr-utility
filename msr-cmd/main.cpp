@@ -14,6 +14,7 @@
 static int no_readback = 0;
 static int no_column_item = 0;
 static int dry_run = 0;
+static int use_long_value = 0;
 
 typedef struct msr_op {
 	uint32_t idx;
@@ -154,8 +155,9 @@ void sysinfo_deinit(sysinfo_t* info)
 void print_help(void)
 {
 	fprintf_s(stdout, "Usage:\n"
-			  "	msr-cmd.exe [options] [read]  [reg]\n"
-			  "	msr-cmd.exe [options] [write] [reg] [edx(63 - 32)] [eax(31 - 0)]\n");
+			  "	msr-cmd.exe [options] read <reg>\n"
+			  "	msr-cmd.exe [options] write <reg> <edx(63 - 32)> <eax(31 - 0)>\n"
+			  "	msr-cmd.exe [options] -l write <reg> <val(63 - 0)>\n");
 	fprintf_s(stdout, "Options:\n");
 	fprintf_s(stdout, "	-s		write only do not read back\n");
 	fprintf_s(stdout, "	-d		data only, not to print column item name\n");
@@ -163,6 +165,7 @@ void print_help(void)
 	fprintf_s(stdout, "	-p <CPU>	logical processor (default: 0) of processor group to apply\n");
 	fprintf_s(stdout, "	-a		apply to all available processors in group\n");
 	fprintf_s(stdout, "	-A		apply to all available processors in all available processor groups\n");
+	fprintf_s(stdout, "	-l		use long 64 bits value for input/output instead of EDX EAX\n");
 	fprintf_s(stdout, "     -t		dry run\n");
 }
 
@@ -170,10 +173,11 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 {
 	int index;
 	int c;
+	int msrwr_args_cnt = 4;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "haAsdg:p:t")) != -1) {
+	while ((c = getopt(argc, argv, "haAsdg:p:tl")) != -1) {
 		switch (c) {
 			case 'h':
 				print_help();
@@ -228,6 +232,10 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 				dry_run = 1;
 				break;
 
+			case 'l':
+				use_long_value = 1;
+				break;
+
 			case '?':
 				if (optopt == 'p')
 					fprintf_s(stderr, "%s(): option -p needs an arguemnt\n", __func__);
@@ -264,7 +272,7 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 						return -EINVAL;
 					}
 				}
-				
+
 				break;
 
 			case WRMSR_REG:
@@ -276,17 +284,33 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 				break;
 
 			case WRMSR_EDX:
-				if (sscanf_s(argv[index], "%x", &cfg->edx) != 1) {
+				if (use_long_value) {
+					uint64_t t;
+
+					if (sscanf_s(argv[index], "%jx", &t) != 1) {
+						fprintf_s(stderr, "%s(): invalid register value\n", __func__);
+						return -EINVAL;
+					}
+
+					cfg->edx = t >> 32 & UINT32_MAX;
+					cfg->eax = t & UINT32_MAX;
+
+				} else if (sscanf_s(argv[index], "%x", &cfg->edx) != 1) {
 					fprintf_s(stderr, "%s(): invalid edx register\n", __func__);
 					return -EINVAL;
 				}
+
 				break;
 
 			case WRMSR_EAX:
+				if (use_long_value)
+					break;
+
 				if (sscanf_s(argv[index], "%x", &cfg->eax) != 1) {
 					fprintf_s(stderr, "%s(): invalid eax register\n", __func__);
 					return -EINVAL;
 				}
+
 				break;
 
 			default:
@@ -294,7 +318,10 @@ int parse_opts(config_t *cfg, int argc, char *argv[])
 		}
 	}
 
-	if ((cfg->msr_op == MSR_OPS_READ && i < 2) || (cfg->msr_op == MSR_OPS_WRITE && i < 4)) {
+	if (use_long_value)
+		msrwr_args_cnt = 3;
+
+	if ((cfg->msr_op == MSR_OPS_READ && i < 2) || (cfg->msr_op == MSR_OPS_WRITE && i < msrwr_args_cnt)) {
 		fprintf_s(stderr, "%s(): missing arguments\n", __func__);
 		return -EINVAL;
 	}
@@ -307,6 +334,17 @@ int config_init(config_t *cfg)
 	memset(cfg, 0x00, sizeof(config_t));
 
 	return 0;
+}
+
+static void result_print(int grp, size_t cpu, uint32_t reg, uint32_t edx, uint32_t eax)
+{
+	if (use_long_value) {
+		uint64_t val = ((uint64_t)edx << 32) | eax;
+		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%016jx\n", grp, cpu, reg, val);
+	}
+	else {
+		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", grp, cpu, reg, edx, eax);
+	}
 }
 
 int msr_read(config_t *cfg)
@@ -336,7 +374,7 @@ int msr_read(config_t *cfg)
 			return -EIO;
 		}
 
-		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, edx, eax);
+		result_print(cfg->proc_group, i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
@@ -359,7 +397,7 @@ int msr_write(config_t *cfg)
 		DWORD_PTR thread_mask = 0;
 
 		if (dry_run) {
-			fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, cfg->edx, cfg->eax);
+			result_print(cfg->proc_group, i, cfg->msr_reg, cfg->edx, cfg->eax);
 			continue;
 		}
 
@@ -379,7 +417,7 @@ int msr_write(config_t *cfg)
 			return -EIO;
 		}
 
-		fprintf_s(stdout, "%-8u %-8zu 0x%08x 0x%08x 0x%08x\n", cfg->proc_group, i, cfg->msr_reg, edx, eax);
+		result_print(cfg->proc_group, i, cfg->msr_reg, edx, eax);
 	}
 
 	return 0;
@@ -438,7 +476,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (!no_column_item) {
-		fprintf_s(stdout, "%-8s %-8s %-10s %-10s %-10s\n", "GROUP", "CPU", "REG", "EDX", "EAX");
+		if (use_long_value)
+			fprintf_s(stdout, "%-8s %-8s %-10s %-10s\n", "GROUP", "CPU", "REG", "VAL");
+		else
+			fprintf_s(stdout, "%-8s %-8s %-10s %-10s %-10s\n", "GROUP", "CPU", "REG", "EDX", "EAX");
 	}
 	
 	if (cfg.group_all) {
