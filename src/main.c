@@ -122,7 +122,10 @@ void help(void)
         pr_raw("Options:\n");
         pr_raw("	-s		write only do not read back\n");
         pr_raw("	-d		data only, not to print column item name\n");
-        pr_raw("	-g <GRP>	processor group (default: 0) to apply, a group can contain up to 64 logical processors\n");
+        pr_raw("	-g <GRP>	processor group (default: 0) to apply\n"
+               "                        'A' or 'a' to apply to all available processors groups\n"
+               "                        by default, a group can contain up to 64 logical processors\n"
+        );
         pr_raw("	-p <CPU>	logical processor (default: 0) of specified processor group to apply\n");
         pr_raw("	-a		operate on all available processors in specified processor group\n");
         pr_raw("	-A		operate on all available processors in all available processor groups\n");
@@ -167,6 +170,11 @@ int args_parse(int argc, char *argv[])
                         break;
 
                 case 'g':
+                        if (optarg[0] == 'A' || optarg[0] == 'a') {
+                                g_cfg.group_all = 1;
+                                break;
+                        }
+
                         if (sscanf(optarg, "%u", &g_cfg.proc_group) != 1) {
                                 pr_err("failed to parse argument for -p\n");
                                 return -EINVAL;
