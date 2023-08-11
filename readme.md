@@ -8,7 +8,7 @@ It is just a simple cli interface of famous WinRing0 driver.
 
 ✔ Systems which have more than 64 cores are supported.
 
-🔶 Supported `rmw`, `{get/set}bit` to make shell scripts more easier.
+🔶 Supported `rmw`, `{get/set}bit` to make shell scripts easier.
 
 ⚠ This tool is intended for power users, if you don't understand fully what is going on, you may shoot your self in the foot.
 
@@ -31,7 +31,9 @@ Usage:
 Options:
         -s              write only do not read back
         -d              data only, not to print column item name
-        -g <GRP>        processor group (default: 0) to apply, a group can contain up to 64 logical processors
+        -g <GRP>        processor group (default: 0) to apply
+                        'A' or 'a' to apply to all available processors groups
+                        by default, a group can contain up to 64 logical processors
         -p <CPU>        logical processor (default: 0) of specified processor group to apply
         -a              operate on all available processors in specified processor group
         -A              operate on all available processors in all available processor groups
