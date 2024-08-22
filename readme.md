@@ -12,6 +12,8 @@ It is just a simple cli interface of famous WinRing0 driver.
 
 ⚠ This tool is intended for power users, if you don't understand fully what is going on, you may shoot your self in the foot.
 
+⚠ `winring0` may be blocked on Windows 11 22h2 and later, set VulnerableDriverBlocklistEnable = 0 in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CI\Config to remove this limitation.
+
 -----
 
 ### ⚠ <u>**ABSOLUTELY NO WARRANTIES, USE ON YOUR OWN RISK**</u> ⚠
